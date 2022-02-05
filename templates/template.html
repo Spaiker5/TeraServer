@@ -1,0 +1,39 @@
+{% include "header.html" %}
+          <!-- your content here -->
+
+          <div class="row">
+  <div class="col-md-6">
+    <div class="card card-chart">
+      <div class="card-header card-chart card-header-warning">
+        <div class="ct-chart"> <img style="width: 100%; height: 100%" src="/plot.png" ></div>
+      </div>
+      <div class="card-body">
+        <h4 class="card-title">{{snake}}</h4>
+        <p class="card-category"><span class="text-success"> {{ temp }} </span> C</p>
+      </div>
+      <div class="card-footer">
+        <div class="stats">
+          <i class="material-icons">access_time</i> {{ date }}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+  <div class="card card-chart">
+    <div class="card-header card-chart card-header-success">
+      <div class="ct-chart" id="completedTasksChart"></div>
+    </div>
+    <div class="card-body">
+      <h4 class="card-title">Completed Tasks</h4>
+      <p class="card-category">Last Campaign Performance</p>
+    </div>
+    <div class="card-footer">
+      <div class="stats">
+        <i class="material-icons">access_time</i> updated 2 minutes ago
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+{% include "footer.html" %}
