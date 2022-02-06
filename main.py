@@ -1,24 +1,55 @@
 import io
 import json
+from functools import wraps
 
-from flask import request, Flask, render_template, Response
+from flask import request, Flask, render_template, redirect, Response, flash, url_for, abort
+from flask_bootstrap import Bootstrap
+from flask_ckeditor import CKEditor
+from flask_login import UserMixin, login_user, LoginManager, current_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
 from matplotlib.figure import Figure
 from matplotlib_inline.backend_inline import FigureCanvas
+from sqlalchemy.orm import relationship
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash
+
+from forms import LoginForm, RegisterForm
 
 app = Flask("Api")
 app.config['SECRET_KEY'] = 'secret'
+ckeditor = CKEditor(app)
+Bootstrap(app)
 
 # CONNECT TO DB
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tererium.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
-# TODO: User login and verification. Snake list relationship to it.
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
+
+# USER TABLE
+class User(UserMixin, db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(100), unique=True)
+    password = db.Column(db.String(100))
+    name = db.Column(db.String(100))
+    snakes = relationship("Snake", back_populates="owner")
+
 
 # CONFIGURE TABLE
-class TeraData(db.Model):
+class Snake(db.Model):
+    __tablename__ = "snake"
     id = db.Column(db.Integer, primary_key=True)
-    snake = db.Column(db.String(50), nullable=False)
+    owner_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    owner = relationship("User", back_populates="snakes")
+    name = db.Column(db.String(50), nullable=False)
     temp = db.Column(db.Integer, nullable=False)
     date = db.Column(db.String(100), nullable=False)
 
@@ -26,13 +57,23 @@ class TeraData(db.Model):
 db.create_all()
 
 
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if current_user.id != 1:
+            return abort(403)
+        return f(*args, **kwargs)
+
+    return decorated_function
+
+
 @app.route("/sensors", methods=["POST"])
 def sensors():
     json_data = request.get_json(force=True)
     data = json.loads(json_data)
 
-    new_entry = TeraData(
-        snake=data["Snake"],
+    new_entry = Snake(
+        name=data["Snake"],
         temp=data["Temp"],
         date=data["Data"],
     )
@@ -44,30 +85,30 @@ def sensors():
 @app.route("/")
 def staty():
     print()
-    # TODO: All snake's overview.
+    # TODO: All name's overview.
     # return render_template("template.html", temp=query.temp, date=query.date)
 
 
-@app.route("/name/<snake>")
-def staty_snake(snake):
-    query = TeraData.query.filter(TeraData.snake == snake).order_by(TeraData.id.desc()).first()
-    return render_template("template.html", temp=query.temp, date=query.date, snake=snake)
+@app.route("/name/<name>")
+def staty_snake(name):
+    query = Snake.query.filter(Snake.name == name).order_by(Snake.id.desc()).first()
+    return render_template("template.html", temp=query.temp, date=query.date, snake=name)
 
 
-@app.route("/<snake>/plot.png")
-def plot_png(snake):
+@app.route("/<name>/plot.png")
+def plot_png(name):
     fig = Figure(figsize=[7, 3], facecolor="#f5700c", edgecolor="#f5700c")
     ax = fig.subplots()
     ax.patch.set_facecolor("#f5700c")
 
     x = []
     y = []
-    for date in TeraData.query.filter(TeraData.snake == snake).all():
+    for date in Snake.query.filter(Snake.name == name).all():
         date = date.date
         print(type(date))
 
         x.append(date)
-    for temp in TeraData.query.filter(TeraData.snake == snake).all():
+    for temp in Snake.query.filter(Snake.name == name).all():
         temp = temp.temp
         y.append(temp)
 
@@ -76,6 +117,68 @@ def plot_png(snake):
     output = io.BytesIO()
     FigureCanvas(fig).print_png(output)
     return Response(output.getvalue(), mimetype='image/png')
+
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    form = RegisterForm()
+    if form.validate_on_submit():
+
+        if User.query.filter_by(email=form.email.data).first():
+            print(User.query.filter_by(email=form.email.data).first())
+            # User already exists
+            flash("You've already signed up with that email, log in instead!")
+            return redirect(url_for('login'))
+
+        hash_and_salted_password = generate_password_hash(
+            form.password.data,
+            method='pbkdf2:sha256',
+            salt_length=8
+        )
+        new_user = User(
+            email=form.email.data,
+            name=form.name.data,
+            password=hash_and_salted_password,
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        login_user(new_user)
+        return redirect(url_for("staty"))
+
+    return render_template("register.html", form=form, current_user=current_user)
+
+
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
+
+        user = User.query.filter_by(email=email).first()
+        # Email doesn't exist or password incorrect.
+        if not user:
+            flash("That email does not exist, please try again.")
+            return redirect(url_for('login'))
+        elif not check_password_hash(user.password, password):
+            flash('Password incorrect, please try again.')
+            return redirect(url_for('login'))
+        else:
+            login_user(user)
+            return redirect(url_for('staty'))
+    return render_template("login.html", form=form, current_user=current_user)
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('staty'))
+
+
+@app.route("/admin")
+@admin_only
+def admin():
+    pass
 
 
 app.run(debug=True)
