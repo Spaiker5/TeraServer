@@ -1,0 +1,44 @@
+{% include "header.html" %}
+
+<table class="table">
+    <thead class=" text-primary">
+    <th>
+        ID
+    </th>
+    <th>
+        Imie
+    </th>
+    <th>
+        Temperatura
+    </th>
+    <th>
+        Wilgotność
+    </th>
+    <th>
+        Data pomiaru
+    </th>
+    </thead>
+    {% for snake in snakes: %}
+    <tbody>
+    <tr>
+        <td>
+            {{ snake.id }}
+        </td>
+        <td>
+            <a href="/snake/" {{ snake.name }}""> {{ snake.name }}
+        </td>
+        <td class="text-primary">
+            {{ snake.temp }}
+        </td>
+        <td class="text-primary">
+            Wilgotność
+        </td>
+        <td>
+            {{ snake.date }}
+        </td>
+
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% include "footer.html" %}
