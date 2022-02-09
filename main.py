@@ -58,6 +58,7 @@ class Snake(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     name = db.Column(db.String(50), nullable=False)
     temp = db.Column(db.Integer, nullable=False)
+    humi = db.Column(db.Integer, nullable=False)
     date = db.Column(db.String(100), nullable=False)
 
 
@@ -72,6 +73,7 @@ def sensors():
     new_entry = Snake(
         name=data["Snake"],
         temp=data["Temp"],
+        humi=data["Humi"],
         date=data["Data"],
         owner_id=data["Owner_ID"]
     )
@@ -113,7 +115,7 @@ def snake_select_name(name):
     user_id = current_user.id
     query = Snake.query.filter(Snake.name == name).order_by(Snake.id.desc()).first()
     if query.owner_id == user_id:
-        return render_template("single_overview.html", temp=query.temp, date=query.date, snake=name)
+        return render_template("single_overview.html", humi=query.humi, temp=query.temp, date=query.date, snake=name)
     else:
         flash("Nie znaleziono węża o takim imieniu.")
         return redirect(url_for('welcome_page'))
@@ -126,7 +128,7 @@ def snake_select_id(snake_id):
     query = Snake.query.filter(Snake.id == snake_id)
     print(query.id)
     if query.owner_id == user_id:
-        return render_template("single_overview.html", temp=query.temp, date=query.date, snake=query.name)
+        return render_template("single_overview.html", humi=query.humi, temp=query.temp, date=query.date, snake=query.name)
     else:
         return flash("Nie znaleziono węża o takim ID.")
 
