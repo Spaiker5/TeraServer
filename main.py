@@ -94,7 +94,7 @@ def test():
 @login_required
 def lista():
     user_id = current_user.id
-    snakes = Snake.query.filter(Snake.owner_id == user_id).order_by(Snake.date.desc())
+    snakes = Snake.query.filter(Snake.owner_id == user_id).order_by(Snake.date)
     return render_template("list.html", snakes=snakes)
 
 
@@ -102,7 +102,7 @@ def lista():
 @login_required
 def all_snakes():
     user_id = current_user.id
-    snakes = Snake.query.filter(Snake.owner_id == user_id)
+    snakes = Snake.query.filter(Snake.owner_id == user_id).order_by(Snake.date)
 
     return render_template("snakes.html", snakes=snakes)
 
