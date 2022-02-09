@@ -83,15 +83,18 @@ def sensors():
 @app.route("/")
 def welcome_page():
     # TODO: All name's overview.
-    return render_template("dashboard.html")
+    return render_template("main.html")
 
+@app.route("/test")
+def test():
+    # TODO: All name's overview.
+    return render_template("dashboard.html")
 
 @app.route("/list")
 @login_required
 def lista():
     user_id = current_user.id
     snakes = Snake.query.filter(Snake.owner_id == user_id).order_by(Snake.date.desc())
-
     return render_template("list.html", snakes=snakes)
 
 
@@ -100,7 +103,6 @@ def lista():
 def all_snakes():
     user_id = current_user.id
     snakes = Snake.query.filter(Snake.owner_id == user_id)
-
 
     return render_template("snakes.html", snakes=snakes)
 
@@ -121,7 +123,8 @@ def snake_select_name(name):
 @login_required
 def snake_select_id(snake_id):
     user_id = current_user.id
-    query = Snake.query.filter(Snake.id == snake_id).order_by(Snake.id.desc()).first()
+    query = Snake.query.filter(Snake.id == snake_id)
+    print(query.id)
     if query.owner_id == user_id:
         return render_template("single_overview.html", temp=query.temp, date=query.date, snake=query.name)
     else:
@@ -138,14 +141,12 @@ def plot_png(name):
     y = []
     for date in Snake.query.filter(Snake.name == name).all():
         date = date.date
-        print(type(date))
 
         x.append(date)
     for temp in Snake.query.filter(Snake.name == name).all():
         temp = temp.temp
         y.append(temp)
 
-    print(x, y)
     ax.plot(x, y)
     output = io.BytesIO()
     FigureCanvas(fig).print_png(output)

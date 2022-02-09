@@ -1,0 +1,35 @@
+{% include "header.html" %}
+
+<div class="row">
+              {% set duble = [] %}
+
+    {% for snake in snakes: %}
+   {% set not_in_list = snake.name not in duble %}
+
+    {% if not_in_list: %}
+    <div class="col-md-6">
+
+
+        <div class="card card-chart">
+            <div class="card-header card-chart card-header-warning">
+                <div class="ct-chart"><img style="width: 100%; height: 100%" src="/{{snake.name}}/plot.png"></div>
+            </div>
+            <div class="card-body">
+                <h4 class="card-title">{{ snake.name }}</h4>
+                <p class="card-category"><span class="text-success"> {{ snake.temp }} </span> C</p>
+            </div>
+            <div class="card-footer">
+                <div class="stats">
+                    <i class="material-icons">access_time</i> {{ snake.date }}
+                </div>
+            </div>
+        </div>
+
+    </div>
+           {% do duble.append(snake.name) %}
+    {% endif %}
+    {% endfor %}
+
+</div>
+
+{% include "footer.html" %}

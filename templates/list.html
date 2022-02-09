@@ -25,7 +25,7 @@
             {{ snake.id }}
         </td>
         <td>
-            <a href="/snake/" {{ snake.name }}""> {{ snake.name }}
+            <a href={{ url_for ("snake_select_name", name= snake.name) }}> {{ snake.name }} </a>
         </td>
         <td class="text-primary">
             {{ snake.temp }}
